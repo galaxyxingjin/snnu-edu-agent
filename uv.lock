@@ -276,10 +276,11 @@ wheels = [
 
 [[package]]
 name = "coze-coding-dev-sdk"
-version = "0.5.19"
+version = "0.5.25"
 source = { registry = "https://mirrors.aliyun.com/pypi/simple/" }
 dependencies = [
     { name = "alembic" },
+    { name = "beautifulsoup4" },
     { name = "boto3" },
     { name = "click" },
     { name = "coze-coding-utils" },
@@ -291,10 +292,14 @@ dependencies = [
     { name = "langgraph" },
     { name = "langgraph-checkpoint-postgres" },
     { name = "markdown" },
+    { name = "numpy" },
+    { name = "openpyxl" },
+    { name = "pillow" },
     { name = "psycopg", extra = ["binary"] },
     { name = "psycopg-pool" },
     { name = "pydantic" },
     { name = "python-docx" },
+    { name = "python-pptx" },
     { name = "reportlab" },
     { name = "requests" },
     { name = "rich" },
@@ -303,9 +308,9 @@ dependencies = [
     { name = "supabase" },
     { name = "unidecode" },
 ]
-sdist = { url = "https://mirrors.aliyun.com/pypi/packages/6a/14/6e1c64256038b45dde451c8240706bd29e807c10e8670a2a7692f51e803c/coze_coding_dev_sdk-0.5.19.tar.gz", hash = "sha256:1f6142ae0953df9c8904b78c63ec0a070c3d74a5401bc728ca403a8ee76f6c36" }
+sdist = { url = "https://mirrors.aliyun.com/pypi/packages/7a/a5/deb0a8e577f094934c2310abea78f6a493a6cada3dbd8bb06c3c2a7d39d5/coze_coding_dev_sdk-0.5.25.tar.gz", hash = "sha256:1f64e224f436f454ec3932d89ac17e622176fc379543badf609d9b3a6d4c198a" }
 wheels = [
-    { url = "https://mirrors.aliyun.com/pypi/packages/12/4b/8815b5c0a728ee05c760234e48d958e4b29f5302c2cd335f7779df25991d/coze_coding_dev_sdk-0.5.19-py3-none-any.whl", hash = "sha256:27476bde081267178cb4e602d8e1055f8e86fc64d686968aba86c277e2ea32fc" },
+    { url = "https://mirrors.aliyun.com/pypi/packages/c2/64/170e7b7ab94736019e1b19faa026b683090dcf3a1c18fc4cef6a4299ee50/coze_coding_dev_sdk-0.5.25-py3-none-any.whl", hash = "sha256:c56fbf9507127668aa1aa0a14c9122a20dd9bdba0e3f66b03c1f65472a2dde4c" },
 ]
 
 [[package]]
