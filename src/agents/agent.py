@@ -15,6 +15,7 @@ from storage.memory.memory_saver import get_memory_saver
 
 from tools.pptx_tool import generate_teaching_pptx
 from tools.web_search_tool import web_search
+from tools.document_generator import generate_study_document
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -73,7 +74,7 @@ def build_agent(ctx=None):
     return create_agent(
         model=llm,
         system_prompt=cfg.get("sp"),
-        tools=[generate_teaching_pptx, web_search],
+        tools=[generate_teaching_pptx, web_search, generate_study_document],
         middleware=[handle_tool_errors],
         checkpointer=get_memory_saver(),
         state_schema=AgentState,
