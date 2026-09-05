@@ -262,6 +262,8 @@ async_graph: Optional[CompiledStateGraph] = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     engine = get_engine()
+    from web.auth import init_auth
+    init_auth()
     @event.listens_for(engine, "connect")
     def _set_utc(dbapi_conn, _):
         with dbapi_conn.cursor() as cur:
@@ -632,6 +634,53 @@ def start_http_server(port):
 
     logger.info(f"Start HTTP Server, Port: {port}, Workers: {workers}")
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=reload, workers=workers)
+
+# ===================== 前端界面与用户认证 =====================
+from pathlib import Path as _Path  # noqa: E402
+from fastapi.responses import HTMLResponse  # noqa: E402
+from fastapi.staticfiles import StaticFiles  # noqa: E402
+import web.auth as _auth  # noqa: E402
+
+_WEB_DIR = _Path(__file__).resolve().parent.parent / "assets" / "web"
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+def index_page() -> HTMLResponse:
+    return HTMLResponse((_WEB_DIR / "index.html").read_text(encoding="utf-8"))
+
+
+@app.get("/login", response_class=HTMLResponse, include_in_schema=False)
+def login_page() -> HTMLResponse:
+    return HTMLResponse((_WEB_DIR / "login.html").read_text(encoding="utf-8"))
+
+
+@app.post("/api/register", include_in_schema=False)
+async def api_register(request: Request) -> dict:
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        return {"success": False, "message": "请求格式错误"}
+    username = str(payload.get("username", "") or "").strip()
+    password = str(payload.get("password", "") or "")
+    ok, message = _auth.register_user(username, password)
+    return {"success": ok, "message": message}
+
+
+@app.post("/api/login", include_in_schema=False)
+async def api_login(request: Request) -> dict:
+    try:
+        payload = await request.json()
+    except json.JSONDecodeError:
+        return {"success": False, "message": "请求格式错误"}
+    username = str(payload.get("username", "") or "").strip()
+    password = str(payload.get("password", "") or "")
+    ok, message = _auth.login_user(username, password)
+    return {"success": ok, "message": message}
+
+
+# 静态资源托管（未来图片/独立 CSS/JS 可直接放 assets/web 下）
+app.mount("/static", StaticFiles(directory=str(_WEB_DIR)), name="web-static")
+
 
 if __name__ == "__main__":
     args = parse_args()
