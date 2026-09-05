@@ -143,6 +143,9 @@
     const password = document.getElementById('login-pwd').value;
     const data = await post('/api/login', { username, password });
     showMsg(data.message, data.success);
+    if (data.success) {
+      setTimeout(() => { location.href = '/chat?user=' + encodeURIComponent(username); }, 600);
+    }
   });
 
   registerForm.addEventListener('submit', async (e) => {
@@ -151,6 +154,9 @@
     const password = document.getElementById('register-pwd').value;
     const data = await post('/api/register', { username, password });
     showMsg(data.message, data.success);
+    if (data.success) {
+      setTimeout(() => { location.href = '/chat?user=' + encodeURIComponent(username); }, 600);
+    }
   });
 </script>
 </body>

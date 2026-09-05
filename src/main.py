@@ -654,6 +654,11 @@ def login_page() -> HTMLResponse:
     return HTMLResponse((_WEB_DIR / "login.html").read_text(encoding="utf-8"))
 
 
+@app.get("/chat", response_class=HTMLResponse, include_in_schema=False)
+def chat_page() -> HTMLResponse:
+    return HTMLResponse((_WEB_DIR / "chat.html").read_text(encoding="utf-8"))
+
+
 @app.post("/api/register", include_in_schema=False)
 async def api_register(request: Request) -> dict:
     try:
