@@ -1,4 +1,4 @@
-"""陕师大智能助学 Agent：学科答疑 + 智能评测 + 教学 PPT 生成。"""
+"""陕师大智能助学 Agent：学科答疑 + 智能评测 + 教学 PPT/讲义/图解 + 虚拟物理实验室。"""
 import os
 import json
 from typing import Annotated
@@ -16,6 +16,8 @@ from storage.memory.memory_saver import get_memory_saver
 from tools.pptx_tool import generate_teaching_pptx
 from tools.web_search_tool import web_search
 from tools.document_generator import generate_study_document
+from tools.diagram_generator import generate_diagram
+from tools.physics_lab import physics_simulation
 
 LLM_CONFIG = "config/agent_llm_config.json"
 
@@ -74,7 +76,13 @@ def build_agent(ctx=None):
     return create_agent(
         model=llm,
         system_prompt=cfg.get("sp"),
-        tools=[generate_teaching_pptx, web_search, generate_study_document],
+        tools=[
+            generate_teaching_pptx,
+            web_search,
+            generate_study_document,
+            generate_diagram,
+            physics_simulation,
+        ],
         middleware=[handle_tool_errors],
         checkpointer=get_memory_saver(),
         state_schema=AgentState,
