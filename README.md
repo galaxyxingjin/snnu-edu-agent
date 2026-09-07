@@ -76,6 +76,7 @@ Agent 会输出带**公式与数值**的定量模拟结果并讲解。
 
 ## 🏗️ 技术架构
 
+- **Agent 形态**：**单 Agent（ReAct 循环）+ 5 个工具函数**（非多智能体编排）
 - **大模型**：豆包 `doubao-seed-2-0-pro`（多模态）
 - **短期记忆**：
   - 滑动窗口：默认保留最近 **40 条消息（约 20 轮）**
@@ -102,8 +103,8 @@ Agent 会输出带**公式与数值**的定量模拟结果并讲解。
         ┌───────────────┴───────────────┐
         ▼                               ▼
 ┌───────────────┐              ┌──────────────────┐
-│  LangChain 智能体 │             │    PostgreSQL     │
-│                │── 记忆 ───► │  用户表 + 对话记忆  │
+│ LangChain Agent│              │    PostgreSQL     │
+│ (单 Agent)     │── 记忆 ───► │  用户表 + 对话记忆  │
 └───────┬───────┘              └──────────────────┘
         │ 调用 5 个工具
         ├──► generate_teaching_pptx   （PPT）
@@ -129,7 +130,7 @@ Agent 会输出带**公式与数值**的定量模拟结果并讲解。
 │   └── agent_llm_config.json    # 模型配置 + System Prompt + 工具描述
 ├── scripts/                     # 启动脚本
 ├── src/
-│   ├── agents/agent.py          # [核心] Agent 主逻辑（build_agent）
+│   ├── agents/agent.py          # [核心] Agent 主逻辑（build_agent，单 Agent + 5 工具）
 │   ├── tools/                   # [核心] 5 个工具函数
 │   │   ├── diagram_generator.py #   知识点图解
 │   │   ├── document_generator.py#   讲义/文档导出
