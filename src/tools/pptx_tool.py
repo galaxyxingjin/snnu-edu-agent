@@ -9,13 +9,13 @@ logger = logging.getLogger(__name__)
 
 @tool
 def generate_teaching_pptx(markdown_content: str, title: str) -> str:
-    """根据 Markdown 内容生成教学 PPT 文件，返回可下载的 URL 链接。
+    """把教学内容制作成教学 PPT 文件，返回可下载的 URL 链接。
 
     适用场景：用户要求制作教学课件、课程 PPT、讲座幻灯片时调用。
 
     Args:
-        markdown_content: PPT 的 Markdown 内容。每页幻灯片之间必须用单独一行 "---" 分隔；
-            第一页通常是标题页（# 大标题 + 副标题）；内容页使用 ## 标题 + 列表组织要点。
+        markdown_content: 分页课件内容，每页幻灯片用单独一行 "---" 分隔，
+            每页包含一个标题与要点列表。页面内容只放要点短句，详细讲解放备注区。
         title: PPT 文件名（不含扩展名）。必须是英文，不能包含空格，
             单词间用下划线连接，例如 calculus_chapter1、python_basics_lesson。
 

@@ -31,14 +31,14 @@ def _generate(markdown_content, doc_type, title):
 
 @tool
 def generate_study_document(markdown_content: str, doc_type: str = "docx", title: str = "study_plan") -> str:
-    """将学习计划或学情诊断报告生成可下载的文档文件。
+    """将学习计划、学情诊断报告或理科解题文档生成可下载的文档文件。
 
 参数说明：
-- markdown_content: 完整的 Markdown 格式文档正文（学习计划/学情报告内容），必须包含标题层级（# 一级标题、## 二级标题）
+- markdown_content: 完整的文档正文，用 # / ## 标题、列表、表格组织。注意：正文中的理科公式必须用 Unicode 下标与纯文本（如 R₁、×、²、E/(R₁+R₂)、G=Mg），禁止使用 $...$ 包裹公式、禁止出现 \\frac、\\sin、\\cdot、^、_、{} 等 LaTeX 原始命令。
 - doc_type: 文档格式，"docx"（Word，默认）或 "pdf"
 - title: 文件名（必须使用英文，例如 "study_plan"、"learning_report"）
 
-返回：文档的下载链接（24 小时内有效）。仅在用户明确要求「导出/下载/生成文档」学习计划、测评报告、错题本时调用。"""
+返回：文档的下载链接（24 小时内有效）。仅在用户明确要求「导出/下载/生成文档」学习计划、测评报告、错题本、解题文档时调用。"""
     try:
         if doc_type not in ("docx", "pdf"):
             doc_type = "docx"
