@@ -38,7 +38,8 @@
 .
 ├── assets/web/                  # 前端页面
 │   ├── index.html               # 介绍界面
-│   └── login.html               # 注册 / 登录页
+│   ├── login.html               # 注册 / 登录页
+│   └── chat.html                # 智能对话页（登录后进入）
 ├── config/
 │   └── agent_llm_config.json    # 大模型配置与 System Prompt
 ├── scripts/                     # 启动脚本
@@ -81,6 +82,15 @@ bash scripts/http_run.sh -m http -p 5000
 
 - 介绍页：`http://localhost:5000/`
 - 注册 / 登录页：`http://localhost:5000/login`
+- 对话页：`http://localhost:5000/chat`（登录后自动跳转）
+
+### 部署后如何访问
+
+在平台点「部署 / 发布」触发一次部署，成功后平台会生成一个访问入口（URL），复制并打开即可：
+
+1. 打开入口即是**介绍页**，浏览功能亮点；
+2. 点击「登录 / 注册」进入登录页，可用游客账号 `youke` / `123456`（灰色提示）或注册新账号；
+3. 登录后自动跳转到**对话页**，可点击顶部快捷入口（如「🔬 物理具象化实验室」）一键体验特色功能。
 
 ### 前端使用说明
 
