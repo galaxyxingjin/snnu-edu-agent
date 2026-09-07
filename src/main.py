@@ -639,9 +639,31 @@ def start_http_server(port):
 from pathlib import Path as _Path  # noqa: E402
 from fastapi.responses import HTMLResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
+from fastapi import UploadFile, File  # noqa: E402
 import web.auth as _auth  # noqa: E402
 
 _WEB_DIR = _Path(__file__).resolve().parent.parent / "assets" / "web"
+
+# 图片扩展名 → MIME 类型（用于上传图片时兜底推断 content_type）
+_IMAGE_EXT_MAP = {
+    "png": "image/png",
+    "jpg": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "gif": "image/gif",
+    "webp": "image/webp",
+    "bmp": "image/bmp",
+}
+
+
+def _guess_image_type(content_type: str, filename: str) -> str:
+    """根据 content_type 与文件名扩展名推断图片 MIME 类型"""
+    ct = (content_type or "").lower()
+    if ct.startswith("image/"):
+        return ct
+    ext = ""
+    if filename and "." in filename:
+        ext = filename.rsplit(".", 1)[-1].lower()
+    return _IMAGE_EXT_MAP.get(ext, "")
 
 
 @app.get("/", response_class=HTMLResponse, include_in_schema=False)
@@ -681,6 +703,36 @@ async def api_login(request: Request) -> dict:
     password = str(payload.get("password", "") or "")
     ok, message = _auth.login_user(username, password)
     return {"success": ok, "message": message}
+
+
+@app.post("/api/upload", include_in_schema=False)
+async def api_upload(file: UploadFile = File(...)) -> dict:
+    """图片上传接口：上传到对象存储并返回可访问 URL，供多模态模型识别题目"""
+    try:
+        from coze_coding_dev_sdk.s3 import S3SyncStorage
+    except ImportError:
+        logging.getLogger(__name__).error("缺少对象存储依赖 coze_coding_dev_sdk")
+        return {"success": False, "message": "对象存储服务不可用"}
+
+    try:
+        content = await file.read()
+        if not content:
+            return {"success": False, "message": "上传内容为空"}
+        if len(content) > 10 * 1024 * 1024:
+            return {"success": False, "message": "图片过大（最大支持 10MB）"}
+
+        content_type = _guess_image_type(file.content_type or "", file.filename or "")
+        if not content_type:
+            return {"success": False, "message": "仅支持图片文件（png/jpg/jpeg/gif/webp/bmp）"}
+
+        file_name = file.filename or f"upload.{content_type.split('/')[-1]}"
+        storage = S3SyncStorage()
+        key = storage.upload_file(file_content=content, file_name=file_name, content_type=content_type)
+        url = storage.generate_presigned_url(key=key, expire_time=86400)
+        return {"success": True, "url": url}
+    except Exception as e:
+        logging.getLogger(__name__).error(f"图片上传失败: {e}")
+        return {"success": False, "message": f"上传失败：{e}"}
 
 
 # 静态资源托管（未来图片/独立 CSS/JS 可直接放 assets/web 下）

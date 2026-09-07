@@ -93,6 +93,25 @@
     background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: #fff; transition: opacity .15s;
   }
   footer button:disabled { opacity: .5; cursor: not-allowed; }
+  footer #imgBtn {
+    width: 54px; flex-shrink: 0; background: #f4f6ff; color: var(--primary-dark); font-size: 20px;
+    border: 1px solid var(--border); padding: 0; display: flex; align-items: center; justify-content: center;
+  }
+  footer #imgBtn:hover { background: #eef1ff; }
+  #preview {
+    display: flex; gap: 10px; padding: 10px 20px 0; flex-wrap: wrap; align-items: center;
+  }
+  #preview .thumb {
+    position: relative; width: 64px; height: 64px; border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--border); background: #fff;
+  }
+  #preview .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  #preview .thumb .rm {
+    position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%;
+    background: rgba(0,0,0,.55); color: #fff; font-size: 12px; line-height: 18px; text-align: center; cursor: pointer;
+  }
+  #preview .hint { font-size: 12px; color: var(--muted); }
+  .msg.user .bubble img { max-width: 200px; border-radius: 8px; display: block; margin-top: 6px; }
 </style>
 </head>
 <body>
@@ -109,10 +128,13 @@
   </div>
 
   <div id="chat"></div>
+  <div id="preview" style="display:none"></div>
 
   <footer>
-    <textarea id="input" placeholder="输入你的问题，Enter 发送，Shift+Enter 换行"></textarea>
+    <button id="imgBtn" title="上传图片，识别题目">📷</button>
+    <textarea id="input" placeholder="输入你的问题，Enter 发送，Shift+Enter 换行；可点 📷 上传图片识别题目"></textarea>
     <button id="send">发送</button>
+    <input type="file" id="fileInput" accept="image/*" hidden>
   </footer>
 
 <script>
@@ -132,6 +154,10 @@
   const chatEl = document.getElementById('chat');
   const inputEl = document.getElementById('input');
   const sendBtn = document.getElementById('send');
+  const imgBtn = document.getElementById('imgBtn');
+  const fileInput = document.getElementById('fileInput');
+  const previewEl = document.getElementById('preview');
+  const pendingImages = [];  // 待发送图片 [{url}]
 
   // —— 轻量 Markdown 渲染 ——
   function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -202,11 +228,80 @@
     return wrap;
   }
 
+  // —— 图片预览与上传 ——
+  function renderPreview() {
+    if (pendingImages.length === 0) {
+      previewEl.style.display = 'none';
+      previewEl.innerHTML = '';
+      return;
+    }
+    previewEl.style.display = 'flex';
+    previewEl.innerHTML = '<span class="hint">已选图片（点 × 移除）：</span>' +
+      pendingImages.map((img, i) =>
+        '<span class="thumb"><img src="' + img.url + '"><span class="rm" data-i="' + i + '">×</span></span>'
+      ).join('');
+    previewEl.querySelectorAll('.rm').forEach(el => {
+      el.addEventListener('click', () => {
+        pendingImages.splice(+el.dataset.i, 1);
+        renderPreview();
+      });
+    });
+  }
+
+  async function uploadImage(file) {
+    if (!file) return;
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: form });
+      const data = await res.json();
+      if (data && data.success && data.url) {
+        pendingImages.push({ url: data.url });
+        renderPreview();
+      } else {
+        alert('图片上传失败：' + ((data && data.message) || '未知错误'));
+      }
+    } catch (e) {
+      alert('图片上传失败：' + (e && e.message || e));
+    }
+  }
+
+  function addUserMessage(text, imageUrls) {
+    const wrap = document.createElement('div');
+    wrap.className = 'msg user';
+    wrap.innerHTML = '<div class="avatar">我</div><div class="bubble"></div>';
+    const bubble = wrap.querySelector('.bubble');
+    bubble.textContent = text || '';
+    (imageUrls || []).forEach(u => {
+      const img = document.createElement('img');
+      img.src = u;
+      img.alt = '题目图片';
+      bubble.appendChild(img);
+    });
+    chatEl.appendChild(wrap);
+    chatEl.scrollTop = chatEl.scrollHeight;
+    return wrap;
+  }
+
   async function send(text) {
     const q = text.trim();
-    if (!q) return;
+    const hasImg = pendingImages.length > 0;
+    if (!q && !hasImg) return;
     inputEl.value = '';
-    addMessage('user', q);
+    // 构造消息内容：有图片则为多模态（text + image_url），否则纯文本
+    let content = q;
+    let imageUrls = [];
+    if (hasImg) {
+      content = [{ type: 'text', text: q || '请识别图片中的题目并解答' }];
+      pendingImages.forEach(img => {
+        content.push({ type: 'image_url', image_url: { url: img.url } });
+        imageUrls.push(img.url);
+      });
+    }
+    addUserMessage(q, imageUrls);
+    // 清空待发送图片
+    pendingImages.length = 0;
+    renderPreview();
     const typing = addTyping();
     sendBtn.disabled = true;
     try {
@@ -215,7 +310,7 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'snnu-edu-agent',
-          messages: [{ role: 'user', content: q }],
+          messages: [{ role: 'user', content: content }],
           session_id: sessionId,
           stream: false
         })
@@ -242,6 +337,33 @@
 
   // 欢迎语
   addMessage('ai', renderMarkdown('你好，' + uname + '！我是**师小助**，很高兴为你服务。\n\n我最大的特色是 **🔬 物理具象化实验室**——能把抽象的力学、电学、原子物理变成看得见、算得出的虚拟实验。\n\n你也可以直接问我：学科答疑、智能出题、讲义/PPT/文档生成、联网查资讯……想从哪里开始？'));
+
+  // —— 图片上传交互 ——
+  imgBtn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', () => {
+    if (fileInput.files && fileInput.files[0]) {
+      uploadImage(fileInput.files[0]);
+      fileInput.value = '';
+    }
+  });
+  // 粘贴图片（Ctrl+V）
+  document.addEventListener('paste', (e) => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (const item of items) {
+      if (item.type && item.type.indexOf('image/') === 0) {
+        const f = item.getAsFile();
+        if (f) { e.preventDefault(); uploadImage(f); }
+      }
+    }
+  });
+  // 拖拽图片上传
+  document.addEventListener('dragover', (e) => e.preventDefault());
+  document.addEventListener('drop', (e) => {
+    e.preventDefault();
+    const files = e.dataTransfer && e.dataTransfer.files;
+    if (files) for (const f of files) if (f.type && f.type.indexOf('image/') === 0) uploadImage(f);
+  });
 
   sendBtn.addEventListener('click', () => send(inputEl.value));
   inputEl.addEventListener('keydown', (e) => {
