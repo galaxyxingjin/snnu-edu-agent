@@ -144,11 +144,12 @@
   const uname = params.get('user') || '同学';
   usernameEl.textContent = uname;
 
-  // 会话 ID（用于跨轮记忆），同浏览器会话内保持一致
-  let sessionId = localStorage.getItem('chat_session_id');
+  // 会话 ID（用于跨轮记忆），按用户名隔离，避免不同账号串号
+  const sessionKey = 'chat_session_' + uname;
+  let sessionId = localStorage.getItem(sessionKey);
   if (!sessionId) {
     sessionId = 'web-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
-    localStorage.setItem('chat_session_id', sessionId);
+    localStorage.setItem(sessionKey, sessionId);
   }
 
   const chatEl = document.getElementById('chat');
@@ -317,10 +318,17 @@
       });
       const data = await res.json();
       let reply = '';
-      if (data && data.choices && data.choices[0] && data.choices[0].message) {
+      if (!res.ok) {
+        // HTTP 错误：优先展示后端返回的明确信息（如积分不足、模型异常等）
+        const detail = data && (data.message || data.error || data.detail);
+        const msg = detail ? (typeof detail === 'string' ? detail : (detail.message || JSON.stringify(detail))) : ('请求失败（HTTP ' + res.status + '）');
+        reply = '（' + msg + '）';
+      } else if (data && data.choices && data.choices[0] && data.choices[0].message) {
         reply = data.choices[0].message.content || '';
       } else if (data && data.message) {
         reply = data.message;
+      } else if (data && data.error) {
+        reply = (typeof data.error === 'string') ? data.error : (data.error.message || JSON.stringify(data.error));
       } else if (typeof data === 'string') {
         reply = data;
       } else {
